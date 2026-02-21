@@ -86,14 +86,6 @@ class IncidentRepository:
             )
             conn.commit()
 
-    def mark_skipped(self, incident_id: str, rewrite_text: str) -> None:
-        with self._connect() as conn:
-            conn.execute(
-                "UPDATE incidents SET rewrite_text = ?, status = ? WHERE incident_id = ?",
-                (rewrite_text, "skipped", incident_id),
-            )
-            conn.commit()
-
     def mark_failed(self, incident_id: str, rewrite_text: str) -> None:
         with self._connect() as conn:
             conn.execute(

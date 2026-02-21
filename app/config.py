@@ -4,13 +4,6 @@ import os
 from dataclasses import dataclass
 
 
-def _parse_bool(name: str, default: bool) -> bool:
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
 @dataclass(frozen=True)
 class Settings:
     telegram_bot_token: str
@@ -20,7 +13,6 @@ class Settings:
     database_url: str
     poll_interval_minutes: int
     user_agent: str
-    dry_run: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -35,5 +27,4 @@ class Settings:
                 "USER_AGENT",
                 "avia-bot/1.0 (+https://github.com/example/avia_bot)",
             ),
-            dry_run=_parse_bool("DRY_RUN", False),
         )
