@@ -66,7 +66,7 @@ python3 -m app.main --test-telegram
 
 ## Что уже реализовано
 
-- Сбор последних записей ASN (базовый HTML-парсер + fallback URL).
+- Сбор последних записей ASN (табличный парсер + fallback по incident-ссылкам `/wikibase/` и `/database/record.php`).
 - Нормализация и генерация `incident_id`.
 - Дедупликация через SQLite.
 - Рерайт через DeepSeek API (или fallback, если ключ не задан).

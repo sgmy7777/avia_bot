@@ -15,12 +15,15 @@ class AviationSafetyCollector:
 
     def fetch_recent_incidents(self) -> list[dict[str, str]]:
         errors: list[str] = []
+        had_success_response = False
 
         with httpx.Client(headers=self._headers, timeout=20.0, follow_redirects=True) as client:
             for url in self._feed_urls:
                 try:
                     response = client.get(url)
                     response.raise_for_status()
+                    had_success_response = True
+
                     incidents = self._parse_incident_table(response.text)
                     if incidents:
                         logger.info("collector fetched %d rows from %s", len(incidents), url)
@@ -29,6 +32,10 @@ class AviationSafetyCollector:
                     errors.append(f"{url}: parsed 0 incidents")
                 except Exception as exc:  # noqa: BLE001
                     errors.append(f"{url}: {exc}")
+
+        if had_success_response:
+            logger.warning("ASN source returned no parseable incidents. %s", " | ".join(errors))
+            return []
 
         raise RuntimeError("ASN source unavailable. " + " | ".join(errors))
 
@@ -39,7 +46,7 @@ class AviationSafetyCollector:
         if incidents:
             return incidents
 
-        return self._parse_wikibase_links(soup)
+        return self._parse_incident_links(soup)
 
     def _parse_table_rows(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         incidents: list[dict[str, str]] = []
@@ -81,15 +88,20 @@ class AviationSafetyCollector:
 
         return incidents
 
-    def _parse_wikibase_links(self, soup: BeautifulSoup) -> list[dict[str, str]]:
+    def _parse_incident_links(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         incidents: list[dict[str, str]] = []
+        seen_urls: set[str] = set()
 
         for anchor in soup.find_all("a", href=True):
             href = anchor.get("href", "")
-            if "/wikibase/" not in href:
+            if not self._is_incident_link(href):
                 continue
 
             source_url = href if href.startswith("http") else f"https://aviation-safety.net/{href.lstrip('/')}"
+            if source_url in seen_urls:
+                continue
+            seen_urls.add(source_url)
+
             title = " ".join(anchor.get_text(" ", strip=True).split())
             if not title:
                 continue
@@ -109,3 +121,12 @@ class AviationSafetyCollector:
             )
 
         return incidents
+
+    @staticmethod
+    def _is_incident_link(href: str) -> bool:
+        lowered = href.lower()
+        return (
+            "/wikibase/" in lowered
+            or "/database/record.php" in lowered
+            or "/database/db" in lowered
+        )

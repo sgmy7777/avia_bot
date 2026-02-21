@@ -103,7 +103,7 @@ def main() -> None:
         try:
             process_once(settings)
         except Exception as exc:  # noqa: BLE001
-            logger.exception("one-shot run failed: %s", exc)
+            logger.error("one-shot run failed: %s", exc)
         return
 
     run_forever(settings)
