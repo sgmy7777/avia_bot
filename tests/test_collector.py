@@ -23,3 +23,20 @@ def test_parse_incident_table_extracts_rows() -> None:
     assert items[0]["aircraft"] == "Airbus A320-200"
     assert items[0]["location"] == "Cairo"
     assert items[0]["source_url"] == "https://aviation-safety.net/wikibase/123"
+
+
+def test_parse_incident_table_fallback_to_wikibase_links() -> None:
+    html = """
+    <html><body>
+      <div>
+        <a href="/wikibase/999">Boeing 737 incident near Oslo</a>
+      </div>
+    </body></html>
+    """
+
+    collector = AviationSafetyCollector("test-agent", ["https://example.com"])
+    items = collector._parse_incident_table(html)
+
+    assert len(items) == 1
+    assert items[0]["title"] == "Boeing 737 incident near Oslo"
+    assert items[0]["source_url"] == "https://aviation-safety.net/wikibase/999"

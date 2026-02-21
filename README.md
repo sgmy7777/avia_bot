@@ -23,7 +23,7 @@ python3 -m app.main
 ## Режимы запуска
 
 - `python3 -m app.main --test-telegram` — отправить тестовое сообщение в канал и выйти.
-- `python3 -m app.main --once` — один цикл проверки ASN и публикации.
+- `python3 -m app.main --once` — один цикл проверки ASN и публикации (ошибки логируются, процесс завершается без бесконечного цикла).
 - `python3 -m app.main` — бесконечный воркер с интервалом `POLL_INTERVAL_MINUTES`.
 - `DRY_RUN=true` — обработка без отправки в Telegram (для безопасной проверки).
 

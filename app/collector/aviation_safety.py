@@ -34,9 +34,15 @@ class AviationSafetyCollector:
 
     def _parse_incident_table(self, html: str) -> list[dict[str, str]]:
         soup = BeautifulSoup(html, "lxml")
-        incidents: list[dict[str, str]] = []
 
-        # Several ASN pages use slightly different tables.
+        incidents = self._parse_table_rows(soup)
+        if incidents:
+            return incidents
+
+        return self._parse_wikibase_links(soup)
+
+    def _parse_table_rows(self, soup: BeautifulSoup) -> list[dict[str, str]]:
+        incidents: list[dict[str, str]] = []
         rows = soup.select("table.hp tr") or soup.select("table.list tr") or soup.select("table tr")
 
         for row in rows:
@@ -66,6 +72,35 @@ class AviationSafetyCollector:
                     "date_utc": date_text,
                     "location": location,
                     "aircraft": aircraft,
+                    "operator": "",
+                    "persons_onboard": "",
+                    "summary": title,
+                    "source_url": source_url,
+                }
+            )
+
+        return incidents
+
+    def _parse_wikibase_links(self, soup: BeautifulSoup) -> list[dict[str, str]]:
+        incidents: list[dict[str, str]] = []
+
+        for anchor in soup.find_all("a", href=True):
+            href = anchor.get("href", "")
+            if "/wikibase/" not in href:
+                continue
+
+            source_url = href if href.startswith("http") else f"https://aviation-safety.net/{href.lstrip('/')}"
+            title = " ".join(anchor.get_text(" ", strip=True).split())
+            if not title:
+                continue
+
+            incidents.append(
+                {
+                    "title": title,
+                    "event_type": "incident",
+                    "date_utc": "",
+                    "location": "",
+                    "aircraft": "",
                     "operator": "",
                     "persons_onboard": "",
                     "summary": title,
