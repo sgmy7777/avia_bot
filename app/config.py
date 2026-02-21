@@ -4,6 +4,19 @@ import os
 from dataclasses import dataclass
 
 
+def _parse_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _parse_csv(name: str, default: str) -> list[str]:
+    raw = os.getenv(name, default)
+    items = [part.strip() for part in raw.split(",")]
+    return [item for item in items if item]
+
+
 @dataclass(frozen=True)
 class Settings:
     telegram_bot_token: str
@@ -13,6 +26,8 @@ class Settings:
     database_url: str
     poll_interval_minutes: int
     user_agent: str
+    dry_run: bool
+    asn_feed_urls: list[str]
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -26,5 +41,10 @@ class Settings:
             user_agent=os.getenv(
                 "USER_AGENT",
                 "avia-bot/1.0 (+https://github.com/example/avia_bot)",
+            ),
+            dry_run=_parse_bool("DRY_RUN", False),
+            asn_feed_urls=_parse_csv(
+                "ASN_FEED_URLS",
+                "https://aviation-safety.net/wikibase/dblist.php?Country=,https://aviation-safety.net/database/",
             ),
         )

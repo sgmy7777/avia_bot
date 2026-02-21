@@ -1,26 +1,43 @@
 from __future__ import annotations
 
+import logging
+
 from bs4 import BeautifulSoup
 import httpx
 
-ASN_RECENT_URL = "https://aviation-safety.net/wikibase/dblist.php?Country=N"
+logger = logging.getLogger(__name__)
 
 
 class AviationSafetyCollector:
-    def __init__(self, user_agent: str) -> None:
+    def __init__(self, user_agent: str, feed_urls: list[str]) -> None:
         self._headers = {"User-Agent": user_agent}
+        self._feed_urls = feed_urls
 
     def fetch_recent_incidents(self) -> list[dict[str, str]]:
-        with httpx.Client(headers=self._headers, timeout=20.0, follow_redirects=True) as client:
-            response = client.get(ASN_RECENT_URL)
-            response.raise_for_status()
+        errors: list[str] = []
 
-        return self._parse_incident_table(response.text)
+        with httpx.Client(headers=self._headers, timeout=20.0, follow_redirects=True) as client:
+            for url in self._feed_urls:
+                try:
+                    response = client.get(url)
+                    response.raise_for_status()
+                    incidents = self._parse_incident_table(response.text)
+                    if incidents:
+                        logger.info("collector fetched %d rows from %s", len(incidents), url)
+                        return incidents
+
+                    errors.append(f"{url}: parsed 0 incidents")
+                except Exception as exc:  # noqa: BLE001
+                    errors.append(f"{url}: {exc}")
+
+        raise RuntimeError("ASN source unavailable. " + " | ".join(errors))
 
     def _parse_incident_table(self, html: str) -> list[dict[str, str]]:
         soup = BeautifulSoup(html, "lxml")
-        rows = soup.select("table.hp tr")
         incidents: list[dict[str, str]] = []
+
+        # Several ASN pages use slightly different tables.
+        rows = soup.select("table.hp tr") or soup.select("table.list tr") or soup.select("table tr")
 
         for row in rows:
             cols = row.find_all("td")
@@ -28,15 +45,19 @@ class AviationSafetyCollector:
                 continue
 
             anchor = row.find("a", href=True)
-            source_url = ""
-            if anchor:
-                href = anchor.get("href", "")
-                source_url = href if href.startswith("http") else f"https://aviation-safety.net/{href.lstrip('/')}"
+            if not anchor:
+                continue
+
+            href = anchor.get("href", "")
+            source_url = href if href.startswith("http") else f"https://aviation-safety.net/{href.lstrip('/')}"
 
             title = " ".join(cols[3].get_text(" ", strip=True).split())
             date_text = cols[0].get_text(" ", strip=True)
             location = cols[1].get_text(" ", strip=True)
             aircraft = cols[2].get_text(" ", strip=True)
+
+            if not any([title, date_text, location, aircraft]):
+                continue
 
             incidents.append(
                 {
