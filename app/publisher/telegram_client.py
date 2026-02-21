@@ -24,11 +24,22 @@ class TelegramPublisher:
 
         with httpx.Client(timeout=20.0) as client:
             response = client.post(url, json=payload)
+            if response.is_success:
+                return
 
-        if response.is_success:
-            return
+            details = self._extract_telegram_error(response)
+            if response.status_code == 400 and "can't parse entities" in details.lower():
+                fallback_payload = {
+                    "chat_id": self._channel,
+                    "text": text,
+                    "disable_web_page_preview": True,
+                }
+                fallback_response = client.post(url, json=fallback_payload)
+                if fallback_response.is_success:
+                    return
+                response = fallback_response
+                details = self._extract_telegram_error(response)
 
-        details = self._extract_telegram_error(response)
         raise RuntimeError(
             "Telegram sendMessage failed. "
             f"status={response.status_code}; chat_id={self._channel}; details={details}"
