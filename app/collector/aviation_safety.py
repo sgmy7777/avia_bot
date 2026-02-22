@@ -39,6 +39,19 @@ class AviationSafetyCollector:
 
         raise RuntimeError("ASN source unavailable. " + " | ".join(errors))
 
+    def fetch_incident_details(self, source_url: str) -> dict[str, str]:
+        if not source_url:
+            return {}
+
+        try:
+            with httpx.Client(headers=self._headers, timeout=20.0, follow_redirects=True) as client:
+                response = client.get(source_url)
+                response.raise_for_status()
+            return self._parse_incident_detail(response.text)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("failed to fetch incident details from %s: %s", source_url, exc)
+            return {}
+
     def _parse_source(self, body: str) -> list[dict[str, str]]:
         payload = body.lstrip()
         if payload.startswith("<?xml") or "<rss" in payload[:300].lower():
@@ -164,6 +177,57 @@ class AviationSafetyCollector:
             )
 
         return incidents
+
+    def _parse_incident_detail(self, html: str) -> dict[str, str]:
+        soup = BeautifulSoup(html, "lxml")
+
+        title_node = soup.find("h1") or soup.find("title")
+        title = " ".join(title_node.get_text(" ", strip=True).split()) if title_node else ""
+
+        summary_parts: list[str] = []
+        for node in soup.select("p"):
+            text = " ".join(node.get_text(" ", strip=True).split())
+            if len(text) >= 40:
+                summary_parts.append(text)
+
+        summary = "\n".join(summary_parts[:4]).strip()
+
+        operator = ""
+        aircraft = ""
+        location = ""
+        date_utc = ""
+
+        for row in soup.select("table tr"):
+            cells = row.find_all(["th", "td"])
+            if len(cells) < 2:
+                continue
+            key = cells[0].get_text(" ", strip=True).lower()
+            val = " ".join(cells[1].get_text(" ", strip=True).split())
+            if not val:
+                continue
+            if "operator" in key and not operator:
+                operator = val
+            elif ("aircraft" in key or "type" in key) and not aircraft:
+                aircraft = val
+            elif "location" in key and not location:
+                location = val
+            elif "date" in key and not date_utc:
+                date_utc = val
+
+        result: dict[str, str] = {}
+        if title:
+            result["title"] = title
+        if summary:
+            result["summary"] = summary
+        if operator:
+            result["operator"] = operator
+        if aircraft:
+            result["aircraft"] = aircraft
+        if location:
+            result["location"] = location
+        if date_utc:
+            result["date_utc"] = date_utc
+        return result
 
     @staticmethod
     def _is_incident_link(href: str) -> bool:

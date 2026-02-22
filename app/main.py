@@ -9,6 +9,7 @@ from app.ai.validator import validate_rewrite
 from app.bootstrap import load_dotenv
 from app.collector.aviation_safety import AviationSafetyCollector
 from app.config import Settings
+from app.domain.models import Incident
 from app.domain.normalizer import normalize_incident
 from app.publisher.telegram_client import TelegramPublisher
 from app.storage.repository import IncidentRepository
@@ -18,6 +19,24 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("avia_bot")
+
+
+def _merge_with_details(incident: Incident, details: dict[str, str]) -> Incident:
+    if not details:
+        return incident
+
+    return Incident(
+        incident_id=incident.incident_id,
+        title=details.get("title") or incident.title,
+        event_type=incident.event_type,
+        date_utc=details.get("date_utc") or incident.date_utc,
+        location=details.get("location") or incident.location,
+        aircraft=details.get("aircraft") or incident.aircraft,
+        operator=details.get("operator") or incident.operator,
+        persons_onboard=incident.persons_onboard,
+        summary=details.get("summary") or incident.summary,
+        source_url=incident.source_url,
+    )
 
 
 def process_once(settings: Settings) -> None:
@@ -34,6 +53,9 @@ def process_once(settings: Settings) -> None:
         incident = normalize_incident(raw)
         if repository.exists(incident.incident_id):
             continue
+
+        details = collector.fetch_incident_details(incident.source_url)
+        incident = _merge_with_details(incident, details)
 
         new_count += 1
         repository.save_discovered(incident)

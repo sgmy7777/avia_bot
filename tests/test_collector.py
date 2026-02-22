@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("bs4")
+
 from app.collector.aviation_safety import AviationSafetyCollector
 
 
@@ -89,3 +93,24 @@ def test_parse_incident_links_supports_asndb_year_links() -> None:
 
     assert len(items) == 1
     assert items[0]["source_url"] == "https://aviation-safety.net/asndb/year/2026/1"
+
+
+def test_parse_incident_detail_extracts_summary() -> None:
+    html = """
+    <html><body>
+      <h1>Airbus A320 incident</h1>
+      <table>
+        <tr><th>Operator</th><td>Air Test</td></tr>
+        <tr><th>Location</th><td>Cairo</td></tr>
+      </table>
+      <p>This is a detailed narrative paragraph containing more than forty characters.</p>
+      <p>Second paragraph with extra context for publication formatting.</p>
+    </body></html>
+    """
+
+    collector = AviationSafetyCollector("test-agent", ["https://example.com"])
+    details = collector._parse_incident_detail(html)
+
+    assert details["title"] == "Airbus A320 incident"
+    assert details["operator"] == "Air Test"
+    assert "detailed narrative" in details["summary"]
