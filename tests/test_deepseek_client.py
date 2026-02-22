@@ -60,6 +60,8 @@ def test_rewrite_uses_fallback_on_402(monkeypatch) -> None:
 
     assert "Источник:" in text
     assert "#авиация #происшествие" in text
+    assert "✈️" in text
+    assert "📍" in text
 
 
 def test_rewrite_uses_api_when_success(monkeypatch) -> None:

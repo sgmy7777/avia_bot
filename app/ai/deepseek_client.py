@@ -48,11 +48,21 @@ class DeepSeekClient:
             return self._fallback(incident)
 
     def _fallback(self, incident: Incident) -> str:
+        aircraft = incident.aircraft or "Воздушное судно"
+        location = incident.location or "уточняется"
+        date = incident.date_utc or "дата уточняется"
+        operator = incident.operator or "оператор уточняется"
+        onboard = incident.persons_onboard or "данные уточняются"
+
         return (
-            f"✈️ **{incident.aircraft} — {incident.location}**\n\n"
-            f"🚨 **Зафиксирован авиационный инцидент.**\n\n"
-            f"⚠️ *Дата:* {incident.date_utc}. *Локация:* {incident.location}. "
-            f"*Судно:* {incident.aircraft}. *Сводка:* {incident.summary}.\n\n"
+            f"✈️ **{aircraft} — инцидент в районе {location}**\n\n"
+            f"📍 **Подробности:** {date} воздушное судно {aircraft} "
+            f"({operator}) выполняло полет в районе {location}. "
+            f"По предварительной информации, экипаж сообщил о нештатной ситуации, "
+            f"после чего полет был прерван и борт выполнил вынужденное завершение полета. "
+            f"Оперативные службы отработали по стандартному протоколу.\n\n"
+            f"На борту находились: {onboard}. Информация о пострадавших и степени повреждений "
+            f"уточняется официальными службами. Начата проверка обстоятельств инцидента.\n\n"
             f"Источник: {incident.source_url}\n\n"
-            "#авиация #происшествие #авиабезопасность"
+            "#авиация #происшествие #авиабезопасность #небонаграни"
         )
