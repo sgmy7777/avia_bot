@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 import httpx
 
 from app.ai.prompt_templates import SYSTEM_PROMPT, build_user_prompt
 from app.domain.models import Incident
+
+logger = logging.getLogger(__name__)
 
 
 class DeepSeekClient:
@@ -29,16 +33,19 @@ class DeepSeekClient:
             "Content-Type": "application/json",
         }
 
-        with httpx.Client(timeout=40.0) as client:
-            response = client.post(
-                "https://api.deepseek.com/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            response.raise_for_status()
-            data = response.json()
-
-        return data["choices"][0]["message"]["content"].strip()
+        try:
+            with httpx.Client(timeout=40.0) as client:
+                response = client.post(
+                    "https://api.deepseek.com/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                response.raise_for_status()
+                data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("DeepSeek unavailable, using fallback rewrite: %s", exc)
+            return self._fallback(incident)
 
     def _fallback(self, incident: Incident) -> str:
         return (
