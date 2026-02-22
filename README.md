@@ -30,7 +30,7 @@ python3 -m app.main
 ## Важные переменные в `.env`
 
 - `ASN_FEED_URLS` — список URL через запятую; бот пройдет их по очереди, пока не получит валидный ответ.
-  - По умолчанию: `https://aviation-safety.net/rss.xml,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=`
+  - По умолчанию: `https://aviation-safety.net/rss.xml,https://aviation-safety.net/asndb/year/<текущий_год>,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=`
 
 ## Troubleshooting
 
@@ -39,6 +39,7 @@ python3 -m app.main
 
 ### `404 Not Found` на ASN
 Источник ASN может менять URL/параметры. Обновите `ASN_FEED_URLS` в `.env` и перезапустите.
+Например, рабочий URL со статьями за год: `https://aviation-safety.net/asndb/year/2026`.
 
 ### `Telegram sendMessage failed ... status=400`
 Проверьте по шагам:

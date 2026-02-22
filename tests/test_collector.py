@@ -75,3 +75,17 @@ def test_parse_rss_items() -> None:
     assert items[0]["title"] == "Airbus A320 incident near Cairo"
     assert items[0]["source_url"] == "https://aviation-safety.net/database/record.php?id=20260115-0"
     assert items[0]["date_utc"] == "Sat, 15 Jan 2026 12:00:00 GMT"
+
+
+def test_parse_incident_links_supports_asndb_year_links() -> None:
+    html = """
+    <html><body>
+      <a href="/asndb/year/2026/1">ASN article link</a>
+    </body></html>
+    """
+
+    collector = AviationSafetyCollector("test-agent", ["https://example.com"])
+    items = collector._parse_source(html)
+
+    assert len(items) == 1
+    assert items[0]["source_url"] == "https://aviation-safety.net/asndb/year/2026/1"

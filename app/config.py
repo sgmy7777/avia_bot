@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 
 def _parse_bool(name: str, default: bool) -> bool:
@@ -15,6 +16,16 @@ def _parse_csv(name: str, default: str) -> list[str]:
     raw = os.getenv(name, default)
     items = [part.strip() for part in raw.split(",")]
     return [item for item in items if item]
+
+
+def _default_asn_feed_urls() -> str:
+    year = datetime.now(timezone.utc).year
+    return (
+        "https://aviation-safety.net/rss.xml,"
+        f"https://aviation-safety.net/asndb/year/{year},"
+        "https://aviation-safety.net/database/,"
+        "https://aviation-safety.net/wikibase/dblist.php?Country="
+    )
 
 
 @dataclass(frozen=True)
@@ -43,8 +54,5 @@ class Settings:
                 "avia-bot/1.0 (+https://github.com/example/avia_bot)",
             ),
             dry_run=_parse_bool("DRY_RUN", False),
-            asn_feed_urls=_parse_csv(
-                "ASN_FEED_URLS",
-                "https://aviation-safety.net/rss.xml,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=",
-            ),
+            asn_feed_urls=_parse_csv("ASN_FEED_URLS", _default_asn_feed_urls()),
         )

@@ -172,4 +172,5 @@ class AviationSafetyCollector:
             "/wikibase/" in lowered
             or "/database/record.php" in lowered
             or "/database/db" in lowered
+            or "/asndb/" in lowered
         )
