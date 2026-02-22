@@ -34,6 +34,7 @@ class Settings:
     telegram_channel: str
     deepseek_api_key: str
     deepseek_model: str
+    deepseek_base_url: str
     database_url: str
     poll_interval_minutes: int
     user_agent: str
@@ -47,6 +48,7 @@ class Settings:
             telegram_channel=os.getenv("TELEGRAM_CHANNEL", "@avia_crash"),
             deepseek_api_key=os.getenv("DEEPSEEK_API_KEY", ""),
             deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+            deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
             database_url=os.getenv("DATABASE_URL", "sqlite:///./data.db"),
             poll_interval_minutes=int(os.getenv("POLL_INTERVAL_MINUTES", "10")),
             user_agent=os.getenv(

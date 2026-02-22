@@ -29,6 +29,7 @@ python3 -m app.main
 
 ## Важные переменные в `.env`
 
+- `DEEPSEEK_BASE_URL` — базовый URL OpenAI-совместимого API DeepSeek (по умолчанию `https://api.deepseek.com/v1`).
 - `ASN_FEED_URLS` — список URL через запятую; бот пройдет их по очереди, пока не получит валидный ответ.
   - По умолчанию: `https://aviation-safety.net/rss.xml,https://aviation-safety.net/asndb/year/<текущий_год>,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=`
 
@@ -40,6 +41,11 @@ python3 -m app.main
 ### `404 Not Found` на ASN
 Источник ASN может менять URL/параметры. Обновите `ASN_FEED_URLS` в `.env` и перезапустите.
 Например, рабочий URL со статьями за год: `https://aviation-safety.net/asndb/year/2026`.
+
+### `402 Payment Required` от DeepSeek
+Это не ошибка кода: обычно это баланс/биллинг API.
+Бот теперь автоматически использует fallback-рерайт и продолжает публикацию.
+Проверьте баланс в кабинете DeepSeek и значение `DEEPSEEK_BASE_URL` (рекомендуется `https://api.deepseek.com/v1`).
 
 ### `Telegram sendMessage failed ... status=400`
 Проверьте по шагам:

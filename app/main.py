@@ -42,7 +42,7 @@ def _merge_with_details(incident: Incident, details: dict[str, str]) -> Incident
 def process_once(settings: Settings) -> None:
     collector = AviationSafetyCollector(settings.user_agent, settings.asn_feed_urls)
     repository = IncidentRepository(settings.database_url)
-    rewriter = DeepSeekClient(settings.deepseek_api_key, settings.deepseek_model)
+    rewriter = DeepSeekClient(settings.deepseek_api_key, settings.deepseek_model, settings.deepseek_base_url)
     publisher = TelegramPublisher(settings.telegram_bot_token, settings.telegram_channel)
 
     raw_items = collector.fetch_recent_incidents()

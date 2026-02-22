@@ -11,9 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSeekClient:
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, base_url: str) -> None:
         self._api_key = api_key
         self._model = model
+        self._base_url = base_url.rstrip("/")
 
     def rewrite_incident(self, incident: Incident) -> str:
         if not self._api_key:
@@ -33,19 +34,44 @@ class DeepSeekClient:
             "Content-Type": "application/json",
         }
 
+        endpoint = f"{self._base_url}/chat/completions"
+
         try:
             with httpx.Client(timeout=40.0) as client:
-                response = client.post(
-                    "https://api.deepseek.com/chat/completions",
-                    headers=headers,
-                    json=payload,
-                )
+                response = client.post(endpoint, headers=headers, json=payload)
                 response.raise_for_status()
                 data = response.json()
             return data["choices"][0]["message"]["content"].strip()
+        except httpx.HTTPStatusError as exc:
+            details = self._extract_error_details(exc.response)
+            if exc.response.status_code == 402:
+                logger.warning(
+                    "DeepSeek 402 Payment Required. Проверьте баланс/биллинг API. details=%s",
+                    details,
+                )
+            else:
+                logger.warning("DeepSeek API error, using fallback rewrite: %s", details)
+            return self._fallback(incident)
         except Exception as exc:  # noqa: BLE001
             logger.warning("DeepSeek unavailable, using fallback rewrite: %s", exc)
             return self._fallback(incident)
+
+    @staticmethod
+    def _extract_error_details(response: httpx.Response) -> str:
+        try:
+            data = response.json()
+            if isinstance(data, dict):
+                if "error" in data:
+                    return str(data["error"])
+                if "message" in data:
+                    return str(data["message"])
+                if "detail" in data:
+                    return str(data["detail"])
+                if "description" in data:
+                    return str(data["description"])
+        except Exception:  # noqa: BLE001
+            pass
+        return response.text.strip() or f"status={response.status_code}"
 
     def _fallback(self, incident: Incident) -> str:
         aircraft = incident.aircraft or "Воздушное судно"
