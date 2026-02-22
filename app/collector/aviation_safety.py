@@ -24,7 +24,7 @@ class AviationSafetyCollector:
                     response.raise_for_status()
                     had_success_response = True
 
-                    incidents = self._parse_incident_table(response.text)
+                    incidents = self._parse_source(response.text)
                     if incidents:
                         logger.info("collector fetched %d rows from %s", len(incidents), url)
                         return incidents
@@ -38,6 +38,49 @@ class AviationSafetyCollector:
             return []
 
         raise RuntimeError("ASN source unavailable. " + " | ".join(errors))
+
+    def _parse_source(self, body: str) -> list[dict[str, str]]:
+        payload = body.lstrip()
+        if payload.startswith("<?xml") or "<rss" in payload[:300].lower():
+            return self._parse_rss(payload)
+
+        return self._parse_incident_table(payload)
+
+    def _parse_rss(self, xml_text: str) -> list[dict[str, str]]:
+        soup = BeautifulSoup(xml_text, "xml")
+        incidents: list[dict[str, str]] = []
+        seen_urls: set[str] = set()
+
+        for item in soup.find_all("item"):
+            link_node = item.find("link")
+            title_node = item.find("title")
+            date_node = item.find("pubDate")
+
+            link = (link_node.get_text(strip=True) if link_node else "").strip()
+            title = " ".join((title_node.get_text(" ", strip=True) if title_node else "").split())
+            pub_date = " ".join((date_node.get_text(" ", strip=True) if date_node else "").split())
+
+            if not link or not title:
+                continue
+            if link in seen_urls:
+                continue
+            seen_urls.add(link)
+
+            incidents.append(
+                {
+                    "title": title,
+                    "event_type": "incident",
+                    "date_utc": pub_date,
+                    "location": "",
+                    "aircraft": "",
+                    "operator": "",
+                    "persons_onboard": "",
+                    "summary": title,
+                    "source_url": link,
+                }
+            )
+
+        return incidents
 
     def _parse_incident_table(self, html: str) -> list[dict[str, str]]:
         soup = BeautifulSoup(html, "lxml")

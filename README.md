@@ -30,7 +30,7 @@ python3 -m app.main
 ## Важные переменные в `.env`
 
 - `ASN_FEED_URLS` — список URL через запятую; бот пройдет их по очереди, пока не получит валидный ответ.
-  - По умолчанию: `https://aviation-safety.net/wikibase/dblist.php?Country=,https://aviation-safety.net/database/`
+  - По умолчанию: `https://aviation-safety.net/rss.xml,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=`
 
 ## Troubleshooting
 
@@ -66,7 +66,7 @@ python3 -m app.main --test-telegram
 
 ## Что уже реализовано
 
-- Сбор последних записей ASN (табличный парсер + fallback по incident-ссылкам `/wikibase/` и `/database/record.php`).
+- Сбор последних записей ASN (RSS + табличный парсер + fallback по incident-ссылкам `/wikibase/` и `/database/record.php`).
 - Нормализация и генерация `incident_id`.
 - Дедупликация через SQLite.
 - Рерайт через DeepSeek API (или fallback, если ключ не задан).

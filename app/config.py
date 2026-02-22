@@ -45,6 +45,6 @@ class Settings:
             dry_run=_parse_bool("DRY_RUN", False),
             asn_feed_urls=_parse_csv(
                 "ASN_FEED_URLS",
-                "https://aviation-safety.net/wikibase/dblist.php?Country=,https://aviation-safety.net/database/",
+                "https://aviation-safety.net/rss.xml,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=",
             ),
         )

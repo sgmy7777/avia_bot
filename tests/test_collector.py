@@ -17,7 +17,7 @@ def test_parse_incident_table_extracts_rows() -> None:
     """
 
     collector = AviationSafetyCollector("test-agent", ["https://example.com"])
-    items = collector._parse_incident_table(html)
+    items = collector._parse_source(html)
 
     assert len(items) == 1
     assert items[0]["aircraft"] == "Airbus A320-200"
@@ -35,7 +35,7 @@ def test_parse_incident_table_fallback_to_incident_links() -> None:
     """
 
     collector = AviationSafetyCollector("test-agent", ["https://example.com"])
-    items = collector._parse_incident_table(html)
+    items = collector._parse_source(html)
 
     assert len(items) == 1
     assert items[0]["title"] == "Boeing 737 incident near Oslo"
@@ -51,7 +51,27 @@ def test_parse_incident_links_deduplicates_urls() -> None:
     """
 
     collector = AviationSafetyCollector("test-agent", ["https://example.com"])
-    items = collector._parse_incident_table(html)
+    items = collector._parse_source(html)
 
     assert len(items) == 1
     assert items[0]["source_url"] == "https://aviation-safety.net/wikibase/999"
+
+
+def test_parse_rss_items() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+    <rss><channel>
+      <item>
+        <title>Airbus A320 incident near Cairo</title>
+        <link>https://aviation-safety.net/database/record.php?id=20260115-0</link>
+        <pubDate>Sat, 15 Jan 2026 12:00:00 GMT</pubDate>
+      </item>
+    </channel></rss>
+    """
+
+    collector = AviationSafetyCollector("test-agent", ["https://example.com"])
+    items = collector._parse_source(xml)
+
+    assert len(items) == 1
+    assert items[0]["title"] == "Airbus A320 incident near Cairo"
+    assert items[0]["source_url"] == "https://aviation-safety.net/database/record.php?id=20260115-0"
+    assert items[0]["date_utc"] == "Sat, 15 Jan 2026 12:00:00 GMT"
