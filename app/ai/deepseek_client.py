@@ -15,9 +15,14 @@ class DeepSeekClient:
         self._api_key = api_key
         self._model = model
         self._base_url = base_url.rstrip("/")
+        self._disabled_reason = ""
 
     def rewrite_incident(self, incident: Incident) -> str:
         if not self._api_key:
+            return self._fallback(incident)
+
+        if self._disabled_reason:
+            logger.info("DeepSeek disabled for current run (%s), using fallback.", self._disabled_reason)
             return self._fallback(incident)
 
         payload = {
@@ -45,8 +50,9 @@ class DeepSeekClient:
         except httpx.HTTPStatusError as exc:
             details = self._extract_error_details(exc.response)
             if exc.response.status_code == 402:
+                self._disabled_reason = "deepseek_402_payment_required"
                 logger.warning(
-                    "DeepSeek 402 Payment Required. Проверьте баланс/биллинг API. details=%s",
+                    "DeepSeek 402 Payment Required. Отключаем запросы к DeepSeek до перезапуска. details=%s",
                     details,
                 )
             else:

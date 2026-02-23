@@ -28,6 +28,7 @@ class _DummyClient:
     def __init__(self, response: _DummyResponse) -> None:
         self._response = response
         self.last_url = ""
+        self.calls = 0
 
     def __enter__(self) -> "_DummyClient":
         return self
@@ -37,6 +38,7 @@ class _DummyClient:
 
     def post(self, url: str, headers: dict, json: dict) -> _DummyResponse:  # noqa: A002
         self.last_url = url
+        self.calls += 1
         return self._response
 
 
@@ -66,6 +68,17 @@ def test_rewrite_uses_fallback_on_402(monkeypatch) -> None:
     assert "#авиация #происшествие" in text
     assert "✈️" in text
     assert "📍" in text
+
+
+def test_rewrite_disables_deepseek_after_first_402(monkeypatch) -> None:
+    client_mock = _DummyClient(_DummyResponse(402, payload={"error": "insufficient_balance"}))
+    monkeypatch.setattr(httpx, "Client", lambda timeout: client_mock)
+    client = DeepSeekClient("key", "deepseek-chat", "https://api.deepseek.com/v1")
+
+    client.rewrite_incident(_incident())
+    client.rewrite_incident(_incident())
+
+    assert client_mock.calls == 1
 
 
 def test_rewrite_uses_api_when_success(monkeypatch) -> None:

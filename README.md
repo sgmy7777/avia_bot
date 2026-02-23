@@ -45,6 +45,7 @@ python3 -m app.main
 ### `402 Payment Required` от DeepSeek
 Это не ошибка кода: обычно это баланс/биллинг API.
 Бот теперь автоматически использует fallback-рерайт и продолжает публикацию.
+При первом `402` в текущем запуске бот отключает дальнейшие вызовы DeepSeek и сразу использует fallback до перезапуска процесса.
 Проверьте баланс в кабинете DeepSeek и значение `DEEPSEEK_BASE_URL` (рекомендуется `https://api.deepseek.com/v1`).
 
 ### `Telegram sendMessage failed ... status=400`
