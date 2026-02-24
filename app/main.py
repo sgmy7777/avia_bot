@@ -73,7 +73,11 @@ def _parse_incident_date(value: str) -> date | None:
 
 
 def _is_recent_incident(incident: Incident, days_back: int) -> bool:
-    incident_day = _parse_incident_date(incident.date_utc)
+    return _is_recent_date_value(incident.date_utc, days_back)
+
+
+def _is_recent_date_value(date_value: str, days_back: int) -> bool:
+    incident_day = _parse_incident_date(date_value)
     if incident_day is None:
         return True
 
@@ -141,6 +145,16 @@ def process_once(settings: Settings) -> None:
 
         incident = normalize_incident(raw)
         if repository.exists(incident.incident_id):
+            continue
+
+        # Fast pre-filter by list date to avoid opening old detail pages.
+        if incident.date_utc and not _is_recent_date_value(incident.date_utc, settings.date_window_days):
+            logger.info(
+                "skip incident outside date window (%s days) by list date: %s | date=%s",
+                settings.date_window_days,
+                incident.incident_id,
+                incident.date_utc,
+            )
             continue
 
         details = collector.fetch_incident_details(incident.source_url)
