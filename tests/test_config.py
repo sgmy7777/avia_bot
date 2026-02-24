@@ -20,3 +20,11 @@ def test_default_asn_feed_urls_contains_current_year_path() -> None:
     value = _default_asn_feed_urls()
     assert "https://aviation-safety.net/rss.xml" in value
     assert "/asndb/year/" in value
+
+
+def test_default_llm_provider_auto(monkeypatch) -> None:
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    from app.config import Settings
+
+    settings = Settings.from_env()
+    assert settings.llm_provider == "auto"

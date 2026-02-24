@@ -40,7 +40,12 @@ def _merge_with_details(incident: Incident, details: dict[str, str]) -> Incident
 
 
 def _build_rewriter(settings: Settings) -> DeepSeekClient:
-    if settings.llm_provider == "openrouter":
+    provider_mode = settings.llm_provider
+
+    if provider_mode == "auto":
+        provider_mode = "openrouter" if settings.openrouter_api_key else "deepseek"
+
+    if provider_mode == "openrouter":
         api_key = settings.openrouter_api_key
         model = settings.openrouter_model
         base_url = settings.openrouter_base_url
@@ -58,7 +63,7 @@ def _build_rewriter(settings: Settings) -> DeepSeekClient:
         extra_headers = {}
         provider_name = "deepseek"
 
-    logger.info("LLM provider: %s | model: %s | base_url: %s", provider_name, model, base_url)
+    logger.info("LLM provider mode: %s -> active: %s | model: %s | base_url: %s", settings.llm_provider, provider_name, model, base_url)
 
     return DeepSeekClient(
         api_key=api_key,

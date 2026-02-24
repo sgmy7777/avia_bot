@@ -29,7 +29,7 @@ python3 -m app.main
 
 ## Важные переменные в `.env`
 
-- `LLM_PROVIDER` — `deepseek` (по умолчанию) или `openrouter`.
+- `LLM_PROVIDER` — `auto` (по умолчанию), `deepseek` или `openrouter`. В режиме `auto` бот выбирает OpenRouter, если задан `OPENROUTER_API_KEY`, иначе DeepSeek.
 - `DEEPSEEK_BASE_URL` — базовый URL OpenAI-совместимого API DeepSeek (по умолчанию `https://api.deepseek.com/v1`).
 - `OPENROUTER_BASE_URL` — базовый URL OpenRouter (`https://openrouter.ai/api/v1`).
 - `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` — ключ и модель OpenRouter.
@@ -48,7 +48,7 @@ python3 -m app.main
 ### `402 Payment Required` от DeepSeek
 
 Если в логах видите `https://api.deepseek.com/...`, значит активен `LLM_PROVIDER=deepseek`.
-Для OpenRouter установите `LLM_PROVIDER=openrouter` и `OPENROUTER_API_KEY`.
+Для OpenRouter установите `LLM_PROVIDER=openrouter` (или оставьте `auto` + задайте `OPENROUTER_API_KEY`).
 Это не ошибка кода: обычно это баланс/биллинг API.
 Бот теперь автоматически использует fallback-рерайт и продолжает публикацию.
 При первом `402` в текущем запуске бот отключает дальнейшие вызовы DeepSeek и сразу использует fallback до перезапуска процесса.

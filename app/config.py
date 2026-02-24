@@ -55,7 +55,7 @@ class Settings:
             deepseek_api_key=os.getenv("DEEPSEEK_API_KEY", ""),
             deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
             deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
-            llm_provider=os.getenv("LLM_PROVIDER", "deepseek").strip().lower(),
+            llm_provider=os.getenv("LLM_PROVIDER", "auto").strip().lower(),
             openrouter_api_key=os.getenv("OPENROUTER_API_KEY", ""),
             openrouter_model=os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat"),
             openrouter_base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
