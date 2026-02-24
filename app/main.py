@@ -39,10 +39,36 @@ def _merge_with_details(incident: Incident, details: dict[str, str]) -> Incident
     )
 
 
+def _build_rewriter(settings: Settings) -> DeepSeekClient:
+    if settings.llm_provider == "openrouter":
+        api_key = settings.openrouter_api_key or settings.deepseek_api_key
+        model = settings.openrouter_model
+        base_url = settings.openrouter_base_url
+        extra_headers = {
+            "HTTP-Referer": settings.openrouter_site_url,
+            "X-Title": settings.openrouter_app_name,
+        }
+        provider_name = "openrouter"
+    else:
+        api_key = settings.deepseek_api_key
+        model = settings.deepseek_model
+        base_url = settings.deepseek_base_url
+        extra_headers = {}
+        provider_name = "deepseek"
+
+    return DeepSeekClient(
+        api_key=api_key,
+        model=model,
+        base_url=base_url,
+        provider_name=provider_name,
+        extra_headers=extra_headers,
+    )
+
+
 def process_once(settings: Settings) -> None:
     collector = AviationSafetyCollector(settings.user_agent, settings.asn_feed_urls)
     repository = IncidentRepository(settings.database_url)
-    rewriter = DeepSeekClient(settings.deepseek_api_key, settings.deepseek_model, settings.deepseek_base_url)
+    rewriter = _build_rewriter(settings)
     publisher = TelegramPublisher(settings.telegram_bot_token, settings.telegram_channel)
 
     raw_items = collector.fetch_recent_incidents()

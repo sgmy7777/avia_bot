@@ -35,6 +35,12 @@ class Settings:
     deepseek_api_key: str
     deepseek_model: str
     deepseek_base_url: str
+    llm_provider: str
+    openrouter_api_key: str
+    openrouter_model: str
+    openrouter_base_url: str
+    openrouter_site_url: str
+    openrouter_app_name: str
     database_url: str
     poll_interval_minutes: int
     user_agent: str
@@ -49,6 +55,12 @@ class Settings:
             deepseek_api_key=os.getenv("DEEPSEEK_API_KEY", ""),
             deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
             deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+            llm_provider=os.getenv("LLM_PROVIDER", "deepseek").strip().lower(),
+            openrouter_api_key=os.getenv("OPENROUTER_API_KEY", ""),
+            openrouter_model=os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat"),
+            openrouter_base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            openrouter_site_url=os.getenv("OPENROUTER_SITE_URL", "https://github.com/sgmy7777/avia_bot"),
+            openrouter_app_name=os.getenv("OPENROUTER_APP_NAME", "avia_bot"),
             database_url=os.getenv("DATABASE_URL", "sqlite:///./data.db"),
             poll_interval_minutes=int(os.getenv("POLL_INTERVAL_MINUTES", "10")),
             user_agent=os.getenv(

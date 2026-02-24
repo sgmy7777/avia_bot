@@ -29,7 +29,10 @@ python3 -m app.main
 
 ## Важные переменные в `.env`
 
+- `LLM_PROVIDER` — `deepseek` (по умолчанию) или `openrouter`.
 - `DEEPSEEK_BASE_URL` — базовый URL OpenAI-совместимого API DeepSeek (по умолчанию `https://api.deepseek.com/v1`).
+- `OPENROUTER_BASE_URL` — базовый URL OpenRouter (`https://openrouter.ai/api/v1`).
+- `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` — ключ и модель OpenRouter.
 - `ASN_FEED_URLS` — список URL через запятую; бот пройдет их по очереди, пока не получит валидный ответ.
   - По умолчанию: `https://aviation-safety.net/rss.xml,https://aviation-safety.net/asndb/year/<текущий_год>,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=`
 
@@ -71,6 +74,22 @@ git pull
 source .venv/bin/activate
 python3 -m app.main --test-telegram
 ```
+
+
+### Как включить OpenRouter
+
+В `.env` установите:
+
+```env
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=ваш_ключ
+OPENROUTER_MODEL=deepseek/deepseek-chat
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_SITE_URL=https://github.com/sgmy7777/avia_bot
+OPENROUTER_APP_NAME=avia_bot
+```
+
+После этого перезапустите бота.
 
 ## Что уже реализовано
 

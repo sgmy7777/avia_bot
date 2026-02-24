@@ -29,6 +29,7 @@ class _DummyClient:
         self._response = response
         self.last_url = ""
         self.calls = 0
+        self.last_headers: dict = {}
 
     def __enter__(self) -> "_DummyClient":
         return self
@@ -39,6 +40,7 @@ class _DummyClient:
     def post(self, url: str, headers: dict, json: dict) -> _DummyResponse:  # noqa: A002
         self.last_url = url
         self.calls += 1
+        self.last_headers = headers
         return self._response
 
 
@@ -91,3 +93,21 @@ def test_rewrite_uses_api_when_success(monkeypatch) -> None:
 
     assert text == "ok rewrite"
     assert client_mock.last_url == "https://api.deepseek.com/v1/chat/completions"
+
+
+def test_rewrite_sends_openrouter_headers(monkeypatch) -> None:
+    payload = {"choices": [{"message": {"content": "ok rewrite"}}]}
+    client_mock = _DummyClient(_DummyResponse(200, payload))
+    monkeypatch.setattr(httpx, "Client", lambda timeout: client_mock)
+    client = DeepSeekClient(
+        "key",
+        "deepseek/deepseek-chat",
+        "https://openrouter.ai/api/v1",
+        provider_name="openrouter",
+        extra_headers={"HTTP-Referer": "https://example.com", "X-Title": "avia_bot"},
+    )
+
+    client.rewrite_incident(_incident())
+
+    assert client_mock.last_headers["HTTP-Referer"] == "https://example.com"
+    assert client_mock.last_headers["X-Title"] == "avia_bot"

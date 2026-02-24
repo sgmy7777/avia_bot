@@ -11,10 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSeekClient:
-    def __init__(self, api_key: str, model: str, base_url: str) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        base_url: str,
+        provider_name: str = "deepseek",
+        extra_headers: dict[str, str] | None = None,
+    ) -> None:
         self._api_key = api_key
         self._model = model
         self._base_url = base_url.rstrip("/")
+        self._provider_name = provider_name
+        self._extra_headers = extra_headers or {}
         self._disabled_reason = ""
 
     def rewrite_incident(self, incident: Incident) -> str:
@@ -22,7 +31,11 @@ class DeepSeekClient:
             return self._fallback(incident)
 
         if self._disabled_reason:
-            logger.info("DeepSeek disabled for current run (%s), using fallback.", self._disabled_reason)
+            logger.info(
+                "%s disabled for current run (%s), using fallback.",
+                self._provider_name,
+                self._disabled_reason,
+            )
             return self._fallback(incident)
 
         payload = {
@@ -37,6 +50,7 @@ class DeepSeekClient:
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
+            **self._extra_headers,
         }
 
         endpoint = f"{self._base_url}/chat/completions"
@@ -50,16 +64,17 @@ class DeepSeekClient:
         except httpx.HTTPStatusError as exc:
             details = self._extract_error_details(exc.response)
             if exc.response.status_code == 402:
-                self._disabled_reason = "deepseek_402_payment_required"
+                self._disabled_reason = f"{self._provider_name}_402_payment_required"
                 logger.warning(
-                    "DeepSeek 402 Payment Required. Отключаем запросы к DeepSeek до перезапуска. details=%s",
+                    "%s 402 Payment Required. Отключаем запросы до перезапуска. details=%s",
+                    self._provider_name,
                     details,
                 )
             else:
-                logger.warning("DeepSeek API error, using fallback rewrite: %s", details)
+                logger.warning("%s API error, using fallback rewrite: %s", self._provider_name, details)
             return self._fallback(incident)
         except Exception as exc:  # noqa: BLE001
-            logger.warning("DeepSeek unavailable, using fallback rewrite: %s", exc)
+            logger.warning("%s unavailable, using fallback rewrite: %s", self._provider_name, exc)
             return self._fallback(incident)
 
     @staticmethod
