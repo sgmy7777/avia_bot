@@ -46,6 +46,8 @@ class Settings:
     user_agent: str
     dry_run: bool
     asn_feed_urls: list[str]
+    max_publications_per_cycle: int
+    date_window_days: int
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -69,4 +71,6 @@ class Settings:
             ),
             dry_run=_parse_bool("DRY_RUN", False),
             asn_feed_urls=_parse_csv("ASN_FEED_URLS", _default_asn_feed_urls()),
+            max_publications_per_cycle=int(os.getenv("MAX_PUBLICATIONS_PER_CYCLE", "10")),
+            date_window_days=int(os.getenv("DATE_WINDOW_DAYS", "1")),
         )

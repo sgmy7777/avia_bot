@@ -28,3 +28,13 @@ def test_default_llm_provider_auto(monkeypatch) -> None:
 
     settings = Settings.from_env()
     assert settings.llm_provider == "auto"
+
+
+def test_default_publication_limits(monkeypatch) -> None:
+    monkeypatch.delenv("MAX_PUBLICATIONS_PER_CYCLE", raising=False)
+    monkeypatch.delenv("DATE_WINDOW_DAYS", raising=False)
+    from app.config import Settings
+
+    settings = Settings.from_env()
+    assert settings.max_publications_per_cycle == 10
+    assert settings.date_window_days == 1

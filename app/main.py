@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import time
+from datetime import date, datetime, timedelta, timezone
 
 from app.ai.deepseek_client import DeepSeekClient
 from app.ai.validator import validate_rewrite
@@ -39,6 +41,47 @@ def _merge_with_details(incident: Incident, details: dict[str, str]) -> Incident
     )
 
 
+def _parse_incident_date(value: str) -> date | None:
+    text = (value or "").strip()
+    if not text:
+        return None
+
+    # Try common ASN / RSS date formats.
+    formats = [
+        "%d %b %Y",
+        "%d %B %Y",
+        "%Y-%m-%d",
+        "%a, %d %b %Y %H:%M:%S %Z",
+        "%a, %d %b %Y %H:%M:%S GMT",
+    ]
+    for fmt in formats:
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+
+    # Fallback: extract day month year substring like '24 Feb 2026'.
+    m = re.search(r"(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})", text)
+    if m:
+        for fmt in ("%d %b %Y", "%d %B %Y"):
+            try:
+                return datetime.strptime(m.group(1), fmt).date()
+            except ValueError:
+                pass
+
+    return None
+
+
+def _is_recent_incident(incident: Incident, days_back: int) -> bool:
+    incident_day = _parse_incident_date(incident.date_utc)
+    if incident_day is None:
+        return True
+
+    today = datetime.now(timezone.utc).date()
+    earliest = today - timedelta(days=days_back)
+    return earliest <= incident_day <= today
+
+
 def _build_rewriter(settings: Settings) -> DeepSeekClient:
     provider_mode = settings.llm_provider
 
@@ -63,7 +106,13 @@ def _build_rewriter(settings: Settings) -> DeepSeekClient:
         extra_headers = {}
         provider_name = "deepseek"
 
-    logger.info("LLM provider mode: %s -> active: %s | model: %s | base_url: %s", settings.llm_provider, provider_name, model, base_url)
+    logger.info(
+        "LLM provider mode: %s -> active: %s | model: %s | base_url: %s",
+        settings.llm_provider,
+        provider_name,
+        model,
+        base_url,
+    )
 
     return DeepSeekClient(
         api_key=api_key,
@@ -84,13 +133,27 @@ def process_once(settings: Settings) -> None:
     logger.info("fetched %d candidate incidents", len(raw_items))
 
     new_count = 0
+    published_in_cycle = 0
     for raw in raw_items:
+        if published_in_cycle >= settings.max_publications_per_cycle:
+            logger.info("publication limit reached for cycle: %d", settings.max_publications_per_cycle)
+            break
+
         incident = normalize_incident(raw)
         if repository.exists(incident.incident_id):
             continue
 
         details = collector.fetch_incident_details(incident.source_url)
         incident = _merge_with_details(incident, details)
+
+        if not _is_recent_incident(incident, settings.date_window_days):
+            logger.info(
+                "skip incident outside date window (%s days): %s | date=%s",
+                settings.date_window_days,
+                incident.incident_id,
+                incident.date_utc,
+            )
+            continue
 
         new_count += 1
         repository.save_discovered(incident)
@@ -108,6 +171,7 @@ def process_once(settings: Settings) -> None:
 
             publisher.publish(rewritten)
             repository.mark_published(incident.incident_id, rewritten)
+            published_in_cycle += 1
             logger.info("published incident %s", incident.incident_id)
         except Exception as exc:  # noqa: BLE001
             logger.exception("failed to process incident %s: %s", incident.incident_id, exc)

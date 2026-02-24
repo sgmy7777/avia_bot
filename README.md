@@ -34,6 +34,8 @@ python3 -m app.main
 - `OPENROUTER_BASE_URL` — базовый URL OpenRouter (`https://openrouter.ai/api/v1`).
 - `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` — ключ и модель OpenRouter.
 - `ASN_FEED_URLS` — список URL через запятую; бот пройдет их по очереди, пока не получит валидный ответ.
+- `MAX_PUBLICATIONS_PER_CYCLE` — лимит публикаций за один цикл (по умолчанию `10`).
+- `DATE_WINDOW_DAYS` — окно дат для публикации: `1` = сегодня и вчера.
   - По умолчанию: `https://aviation-safety.net/rss.xml,https://aviation-safety.net/asndb/year/<текущий_год>,https://aviation-safety.net/database/,https://aviation-safety.net/wikibase/dblist.php?Country=`
 
 ## Troubleshooting
@@ -95,6 +97,8 @@ OPENROUTER_APP_NAME=avia_bot
 После этого перезапустите бота.
 
 ## Что уже реализовано
+
+- Ограничение публикаций за цикл и фильтр дат (сегодня и 1 день до по умолчанию).
 
 - Сбор последних записей ASN (RSS + табличный парсер + fallback по incident-ссылкам `/wikibase/` и `/database/record.php`).
 - Дозагрузка полных карточек ASN по каждой ссылке для более содержательного рерайта (заголовок, таблица фактов, подробное описание).
