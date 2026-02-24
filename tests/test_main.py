@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("httpx")
+
 from app.domain.models import Incident
 from app.main import _merge_with_details
 

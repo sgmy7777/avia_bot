@@ -41,7 +41,7 @@ def _merge_with_details(incident: Incident, details: dict[str, str]) -> Incident
 
 def _build_rewriter(settings: Settings) -> DeepSeekClient:
     if settings.llm_provider == "openrouter":
-        api_key = settings.openrouter_api_key or settings.deepseek_api_key
+        api_key = settings.openrouter_api_key
         model = settings.openrouter_model
         base_url = settings.openrouter_base_url
         extra_headers = {
@@ -49,12 +49,16 @@ def _build_rewriter(settings: Settings) -> DeepSeekClient:
             "X-Title": settings.openrouter_app_name,
         }
         provider_name = "openrouter"
+        if not api_key:
+            logger.warning("LLM_PROVIDER=openrouter, но OPENROUTER_API_KEY пуст. Будет использован fallback-рерайт.")
     else:
         api_key = settings.deepseek_api_key
         model = settings.deepseek_model
         base_url = settings.deepseek_base_url
         extra_headers = {}
         provider_name = "deepseek"
+
+    logger.info("LLM provider: %s | model: %s | base_url: %s", provider_name, model, base_url)
 
     return DeepSeekClient(
         api_key=api_key,

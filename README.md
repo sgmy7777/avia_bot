@@ -46,6 +46,9 @@ python3 -m app.main
 Например, рабочий URL со статьями за год: `https://aviation-safety.net/asndb/year/2026`.
 
 ### `402 Payment Required` от DeepSeek
+
+Если в логах видите `https://api.deepseek.com/...`, значит активен `LLM_PROVIDER=deepseek`.
+Для OpenRouter установите `LLM_PROVIDER=openrouter` и `OPENROUTER_API_KEY`.
 Это не ошибка кода: обычно это баланс/биллинг API.
 Бот теперь автоматически использует fallback-рерайт и продолжает публикацию.
 При первом `402` в текущем запуске бот отключает дальнейшие вызовы DeepSeek и сразу использует fallback до перезапуска процесса.
