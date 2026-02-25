@@ -66,8 +66,8 @@ def test_rewrite_uses_fallback_on_402(monkeypatch) -> None:
 
     text = client.rewrite_incident(_incident())
 
-    assert "Источник:" in text
-    assert "#авиация #происшествие" in text
+    assert "Источник:" not in text
+    assert "#авиация #происшествие #небонаграни #авиабезопасность" in text
     assert "✈️" in text
     assert "📍" in text
 

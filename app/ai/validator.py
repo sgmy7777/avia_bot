@@ -7,10 +7,9 @@ def validate_rewrite(text: str) -> tuple[bool, str]:
         return False, "too_short"
     if len(words) > 350:
         return False, "too_long"
-    if "#авиация" not in text or "#происшествие" not in text:
+    required_hashtags = ("#авиация", "#происшествие", "#небонаграни", "#авиабезопасность")
+    if any(tag not in text for tag in required_hashtags):
         return False, "missing_required_hashtags"
-    if "Источник" not in text and "source" not in text.lower():
-        return False, "missing_source"
     if "✈️" not in text or "📍" not in text:
         return False, "missing_format_markers"
     return True, "ok"
